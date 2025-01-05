@@ -12,7 +12,10 @@ std::vector<uint8_t> HMAC::hmacSHA512(std::vector<uint8_t> key, std::vector<uint
                 key = hashFunc(key);
         }
 
-        key.resize(blockSize, 0x00);
+        if (key.size() < blockSize)
+        {
+                key.resize(blockSize, 0x00);
+        }
 
         std::vector<uint8_t> opad(blockSize, 0x5c);
         std::vector<uint8_t> ipad(blockSize, 0x36);

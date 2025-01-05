@@ -35,12 +35,89 @@ std::vector<uint8_t> hashSHA512(const std::vector<uint8_t> &message)
         return hexToBytes(hashed);
 }
 
-int main()
+bool testHMAC(const std::string &key, const std::string &message, const std::string &got)
 {
-        // FIX: Wrong output when message contains capital letters
+        // execute command line command
+        std::string cmd = "echo -n \"" + message + "\" | openssl dgst -sha512 -hmac \"" + key + "\"";
+        FILE *pipe = popen(cmd.c_str(), "r");
+        if (!pipe)
+        {
+                std::cerr << "popen() failed" << std::endl;
+                return false;
+        }
 
-        std::string key = "key";
-        std::string message = "The quick brown fox jumps over the lazy dog";
+        // read output
+        char buffer[128];
+        std::string expected;
+        while (!feof(pipe))
+        {
+                if (fgets(buffer, 128, pipe) != NULL)
+                {
+                        expected += buffer;
+                }
+        }
+
+        // get rid of everything but the hash
+        expected = expected.substr(expected.find("= ") + 2);
+        expected = expected.substr(0, expected.size() - 1);
+
+        // close pipe
+        pclose(pipe);
+
+        return got == expected;
+}
+
+bool testSHA512(const std::string &message, const std::string &got)
+{
+        std::string cmd = "echo -n \"" + message + "\" | openssl dgst -sha512";
+        FILE *pipe = popen(cmd.c_str(), "r");
+        if (!pipe)
+        {
+                std::cerr << "popen() failed" << std::endl;
+                return false;
+        }
+
+        // read output
+        char buffer[128];
+        std::string expected;
+        while (!feof(pipe))
+        {
+                if (fgets(buffer, 128, pipe) != NULL)
+                {
+                        expected += buffer;
+                }
+        }
+
+        expected = expected.substr(expected.find("= ") + 2);
+        expected = expected.substr(0, expected.size() - 1);
+
+        pclose(pipe);
+
+        return got == expected;
+}
+
+int main(int argc, char *argv[])
+{
+        // FIX: Wrong output when message contains both upper and lower case letters
+
+        if (argc != 3)
+        {
+                std::cout << "Usage: " << argv[0] << " <key> <message>" << std::endl;
+                return 1;
+        }
+
+        std::string key = argv[1];
+        std::string message = argv[2];
+
+        // testing
+        //key = "key";
+        //message = "The quick brown fox jumps over the lazy dog";
+
+        // sha test
+
+        SHA512 sha512;
+        std::string hashedTest = sha512.hash(message);
+        std::cout << "SHA512 test: " << (testSHA512(message, hashedTest) ? "PASS" : "FAIL") << std::endl;
 
         std::vector<uint8_t> keyBytes(key.begin(), key.end());
         std::vector<uint8_t> messageBytes(message.begin(), message.end());
@@ -49,19 +126,7 @@ int main()
 
         std::string hashedStr(hashed.begin(), hashed.end());
         std::string hashedHex = bytesToHex(hashed);
-
-        std::string expOut = "b42af09057bac1e2d41708e48a902e09b5ff7f12ab428a4fe86653c73dd248fb82f948a549f7b791a5b41915ee4d1ec3935357e4e2317250d0372afa2ebeeb3a";
-
-        if (hashedHex == expOut)
-        {
-                std::cout << "HASH: " << hashedHex << std::endl;
-                std::cout << "Test passed" << std::endl;
-        }
-        else
-        {
-                std::cout << "HASH: " << hashedHex << std::endl;
-                std::cout << "Test failed" << std::endl;
-        }
+        std::cout << "HMAC test: " << (testHMAC(key, message, hashedHex) ? "PASS" : "FAIL") << std::endl;
 
         return 0;
 }
