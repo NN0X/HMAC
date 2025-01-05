@@ -1,5 +1,5 @@
 ﻿CXX = clang++
-CFLAGS = -O3 -Wall -Wextra -Wpedantic
+CFLAGS = -O3 -Wall -Wextra -Wpedantic -lssl -lcrypto
 SRC = src
 OUT = main
 

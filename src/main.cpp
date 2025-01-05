@@ -1,132 +1,91 @@
 #include <iostream>
+#include <cstring>
 
-#include "SHA512.h"
+#include <openssl/sha.h>
+#include <openssl/hmac.h>
+
 #include "HMAC.h"
-
-std::string bytesToHex(const std::vector<uint8_t> &bytes)
-{
-        std::string hex;
-        for (size_t i = 0; i < bytes.size(); i++)
-        {
-                hex += "0123456789abcdef"[bytes[i] >> 4];
-                hex += "0123456789abcdef"[bytes[i] & 0xf];
-        }
-        return hex;
-}
-
-std::vector<uint8_t> hexToBytes(const std::string &hex)
-{
-        // 0123456789abcdef
-        std::vector<uint8_t> bytes;
-        for (size_t i = 0; i < hex.size(); i += 2)
-        {
-                uint8_t byte = std::stoi(hex.substr(i, 2), nullptr, 16);
-                bytes.push_back(byte);
-        }
-        return bytes;
-}
-
-std::vector<uint8_t> hashSHA512(const std::vector<uint8_t> &message)
-{
-        std::string messageStr(message.begin(), message.end());
-        SHA512 sha512;
-        std::string hashed = sha512.hash(messageStr);
-
-        return hexToBytes(hashed);
-}
-
-bool testHMAC(const std::string &key, const std::string &message, const std::string &got)
-{
-        // execute command line command
-        std::string cmd = "echo -n \"" + message + "\" | openssl dgst -sha512 -hmac \"" + key + "\"";
-        FILE *pipe = popen(cmd.c_str(), "r");
-        if (!pipe)
-        {
-                std::cerr << "popen() failed" << std::endl;
-                return false;
-        }
-
-        // read output
-        char buffer[128];
-        std::string expected;
-        while (!feof(pipe))
-        {
-                if (fgets(buffer, 128, pipe) != NULL)
-                {
-                        expected += buffer;
-                }
-        }
-
-        // get rid of everything but the hash
-        expected = expected.substr(expected.find("= ") + 2);
-        expected = expected.substr(0, expected.size() - 1);
-
-        // close pipe
-        pclose(pipe);
-
-        return got == expected;
-}
-
-bool testSHA512(const std::string &message, const std::string &got)
-{
-        std::string cmd = "echo -n \"" + message + "\" | openssl dgst -sha512";
-        FILE *pipe = popen(cmd.c_str(), "r");
-        if (!pipe)
-        {
-                std::cerr << "popen() failed" << std::endl;
-                return false;
-        }
-
-        // read output
-        char buffer[128];
-        std::string expected;
-        while (!feof(pipe))
-        {
-                if (fgets(buffer, 128, pipe) != NULL)
-                {
-                        expected += buffer;
-                }
-        }
-
-        expected = expected.substr(expected.find("= ") + 2);
-        expected = expected.substr(0, expected.size() - 1);
-
-        pclose(pipe);
-
-        return got == expected;
-}
+#include "tests.h"
 
 int main(int argc, char *argv[])
 {
-        // FIX: Wrong output when message contains both upper and lower case letters
+        unsigned char *(*sha)(const unsigned char *, size_t, unsigned char *nullPass) = nullptr;
+        const EVP_MD *evpSHA = nullptr;
+        size_t blockSize = 0;
+        size_t outputSize = 0;
 
-        if (argc != 3)
+        if (argc == 2 && strcmp(argv[1], "help") == 0)
         {
-                std::cout << "Usage: " << argv[0] << " <key> <message>" << std::endl;
+                std::cout << "Usage: " << argv[0] << " <key> <message>\n";
+                std::cout << "Usage: " << argv[0] << " <key> <message> <hash function>\n";
+                std::cout << "Usage: " << argv[0] << " test <n> <hash function>\n";
+                std::cout << "hash function: SHA1, SHA256, SHA512\n";
+                return 2;
+        }
+
+        if (argc != 3 && argc != 4)
+        {
+                std::cout << "Usage: " << argv[0] << " <key> <message>\n";
+                std::cout << "Usage: " << argv[0] << " <key> <message> <hash function>\n";
+                std::cout << "Usage: " << argv[0] << " test <n> <hash function>\n";
                 return 1;
         }
 
-        std::string key = argv[1];
-        std::string message = argv[2];
+        if (argc == 4)
+        {
+                std::string hashFunc(argv[3]);
+                if (hashFunc == "SHA1")
+                {
+                        sha = SHA1;
+                        evpSHA = EVP_sha1();
+                        blockSize = 64;
+                        outputSize = 20;
+                }
+                else if (hashFunc == "SHA256")
+                {
+                        sha = SHA256;
+                        evpSHA = EVP_sha256();
+                        blockSize = 64;
+                        outputSize = 32;
+                }
+                else if (hashFunc == "SHA512")
+                {
+                        sha = SHA512;
+                        evpSHA = EVP_sha512();
+                        blockSize = 128;
+                        outputSize = 64;
+                }
+                else
+                {
+                        std::cout << "Invalid hash function\n";
+                        return 3;
+                }
+        }
+        else
+        {
+                sha = SHA512;
+                evpSHA = EVP_sha512();
+                blockSize = 128;
+                outputSize = 64;
+        }
 
-        // testing
-        //key = "key";
-        //message = "The quick brown fox jumps over the lazy dog";
+        if (strcmp(argv[1], "test") == 0)
+        {
+                int n = std::stoi(argv[2]);
+                testRandomPairs(n, sha, evpSHA, blockSize, outputSize);
+                return 0;
+        }
 
-        // sha test
 
-        SHA512 sha512;
-        std::string hashedTest = sha512.hash(message);
-        std::cout << "SHA512 test: " << (testSHA512(message, hashedTest) ? "PASS" : "FAIL") << std::endl;
+        std::vector<uint8_t> keyBytes(argv[1], argv[1] + strlen(argv[1]));
+        std::vector<uint8_t> messageBytes(argv[2], argv[2] + strlen(argv[2]));
 
-        std::vector<uint8_t> keyBytes(key.begin(), key.end());
-        std::vector<uint8_t> messageBytes(message.begin(), message.end());
+        std::vector<uint8_t> hashed = HMACns::hmac(keyBytes, messageBytes, sha, blockSize, outputSize);
 
-        std::vector<uint8_t> hashed = HMAC::hmacSHA512(keyBytes, messageBytes, hashSHA512, 128);
-
-        std::string hashedStr(hashed.begin(), hashed.end());
-        std::string hashedHex = bytesToHex(hashed);
-        std::cout << "HMAC test: " << (testHMAC(key, message, hashedHex) ? "PASS" : "FAIL") << std::endl;
+        for (uint8_t byte : hashed)
+        {
+                std::cout << std::hex << (int)byte;
+        }
 
         return 0;
 }

@@ -4,9 +4,9 @@
 #include <vector>
 #include <cstdint>
 
-namespace HMAC
+namespace HMACns
 {
-        std::vector<uint8_t> hmacSHA512(std::vector<uint8_t> key, std::vector<uint8_t> message, std::vector<uint8_t> (*hashFunc)(const std::vector<uint8_t> &), size_t blockSize);
+        std::vector<uint8_t> hmac(std::vector<uint8_t> key, std::vector<uint8_t> message, unsigned char *(*hashFunc)(const unsigned char *, size_t, unsigned char *nullPass), size_t blockSize, size_t outputSize);
 }
 
 #endif
