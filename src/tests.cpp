@@ -4,10 +4,13 @@
 #include <random>
 #include <algorithm>
 
-#include <openssl/sha.h>
 #include <openssl/hmac.h>
 
 #include "HMAC.h"
+
+const uint8_t ZERO = 0x00;
+const uint8_t MAX_BYTE = 0xFF;
+const int MAX_LEN = 1024;
 
 bool testHMAC(const std::vector<uint8_t> &key, const std::vector<uint8_t> &message, const std::vector<uint8_t> &got, const EVP_MD *md, size_t outputSize)
 {
@@ -49,10 +52,9 @@ void testRandomPairs(int n, unsigned char *(*hashFunc)(const unsigned char *, si
         int passed = 0;
         for (int i = 0; i < n; i++)
         {
-                std::vector<uint8_t> key = genRandomBytes(1, 64, 1024);
-                std::vector<uint8_t> message = genRandomBytes(1, 64, 1024);
-
-                std::vector<uint8_t> got = HMACns::hmac(key, message, hashFunc, blockSize, outputSize);
+                std::vector<uint8_t> key = genRandomBytes(ZERO, MAX_BYTE, MAX_LEN);
+                std::vector<uint8_t> message = genRandomBytes(ZERO, MAX_BYTE, MAX_LEN);
+                std::vector<uint8_t> got = My::hmac(key, message, hashFunc, blockSize, outputSize);
 
                 if (verbose)
                 {

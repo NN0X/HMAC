@@ -3,7 +3,11 @@
 
 #include "HMAC.h"
 
-std::vector<uint8_t> HMACns::hmac(std::vector<uint8_t> key, std::vector<uint8_t> message, unsigned char *(*hashFunc)(const unsigned char *, size_t, unsigned char *nullPass), size_t blockSize, size_t outputSize)
+const uint8_t ZERO = 0x00;
+const uint8_t IPAD = 0x36;
+const uint8_t OPAD = 0x5c;
+
+std::vector<uint8_t> My::hmac(std::vector<uint8_t> key, std::vector<uint8_t> message, unsigned char *(*hashFunc)(const unsigned char *, size_t, unsigned char *nullPass), size_t blockSize, size_t outputSize)
 {
         if (hashFunc == nullptr)
         {
@@ -19,11 +23,11 @@ std::vector<uint8_t> HMACns::hmac(std::vector<uint8_t> key, std::vector<uint8_t>
 
         if (key.size() < blockSize)
         {
-                key.resize(blockSize, 0x00);
+                key.resize(blockSize, ZERO);
         }
 
-        std::vector<uint8_t> opad(blockSize, 0x5c);
-        std::vector<uint8_t> ipad(blockSize, 0x36);
+        std::vector<uint8_t> opad(blockSize, OPAD);
+        std::vector<uint8_t> ipad(blockSize, IPAD);
 
         for (size_t i = 0; i < blockSize; i++)
         {
