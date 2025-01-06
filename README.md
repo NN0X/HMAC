@@ -10,7 +10,7 @@ I created this implementation as a university project. It is a simple implementa
 
 ### Pre-built binaries
 
-You can download pre-built binaries from the [releases]() page.
+You can download pre-built binaries from the [releases](https://github.com/NN0X/HMAC/releases) page.
 
 ### Building from source (Linux-only)
 

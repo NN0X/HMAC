@@ -18,12 +18,14 @@ all:
 	rm *.o
 	cp src/$(HEADER).h build/lib/$(HEADER).h
 	cp *.md build/lib/
+	cp -r docs build/
 
 release:
 	rm -f -r build
 	mkdir build
 	$(CXX) $(CFLAGS) $(SRC)/*.cpp -o build/$(OUT) 2> build/make.log
 	cp *.md build/
+	cp -r docs build/
 
 static:
 	rm -f -r build
@@ -33,3 +35,4 @@ static:
 	rm *.o
 	cp src/$(HEADER).h build/$(HEADER).h
 	cp *.md build/
+	cp -r docs build/
