@@ -10,7 +10,7 @@ Stworzyłem tę implementację jako projekt na uczelni. Jest to prosta implement
 
 ### Gotowe binaria
 
-Gotowe pliki binarne są dostępne w zakładce [releases]().
+Gotowe pliki binarne są dostępne w zakładce [releases](https://github.com/NN0X/HMAC/releases).
 
 ### Budowanie ze źródła (tylko Linux)
 
