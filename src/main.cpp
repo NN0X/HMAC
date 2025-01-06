@@ -1,5 +1,6 @@
 #include <iostream>
 #include <cstring>
+#include <iomanip>
 
 #include <openssl/sha.h>
 
@@ -122,8 +123,9 @@ int main(int argc, char *argv[])
 
         for (uint8_t byte : hashed)
         {
-                std::cout << std::hex << (int)byte;
+                std::cout << std::hex << std::setw(2) << std::setfill('0') << (unsigned int)byte;
         }
+        std::cout << std::dec << std::endl;
 
         return 0;
 }
