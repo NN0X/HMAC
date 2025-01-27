@@ -22,7 +22,7 @@ int main(int argc, char *argv[])
         if (argc == 2)
         {
                 std::string arg(argv[1]);
-                if (arg == "help")
+                if (arg == "--help" || arg == "-h")
                 {
                         std::cout << "Usage: " << argv[0] << " <key> <message>\n";
                         std::cout << "Usage: " << argv[0] << " <key> <message> <hash function>\n";
@@ -38,13 +38,12 @@ int main(int argc, char *argv[])
         if (argc != 3 && argc != 4 && argc != 5)
         {
                 std::cout << "Usage: " << argv[0] << " <key> <message>\n";
-                std::cout << "Usage: " << argv[0] << " <key> <message> <hash function>\n";
-                std::cout << "Usage: " << argv[0] << " test <n> <hash function>\n";
+                std::cout << "\t-h --help\tPrint help message\n";
                 return 1;
         }
 
         bool override = false;
-        if (argc == 4)
+        if (argc == 4 || argc == 5)
         {
                 std::string hashFunc(argv[3]);
                 if (hashFunc == "SHA1")
